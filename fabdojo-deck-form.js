@@ -1,6 +1,10 @@
 jQuery(() => {
     fabdojoDeckForm_initSelect2()
-    jQuery('.add_card_info').css('cursor', 'pointer').click(fabdojoDeckForm_addCardInfo)
+    jQuery('.fabdojo-deck-form .add_card_info').click(fabdojoDeckForm_addCardInfo)
+    jQuery('.fabdojo-deck-form button.delete').click(fabdojoDeckForm_delete)
+    jQuery('.fabdojo-deck-form button.save_add').click(fabdojoDeckForm_saveAdd)
+    jQuery('.fabdojo-deck-form button.save_edit').click(fabdojoDeckForm_saveEdit)
+    jQuery('.fabdojo-deck-form button.save').click(fabdojoDeckForm_save)
 })
 
 function fabdojoDeckForm_initSelect2() {
@@ -14,5 +18,28 @@ function fabdojoDeckForm_addCardInfo() {
     jQuery.get(fabdojo_deck_form.card_info_url, HTML => {
         jQuery('table.fabdojo-card-list tbody').append(HTML)
         fabdojoDeckForm_initSelect2()
+    })
+}
+
+function fabdojoDeckForm_delete() {
+    alert('delete')
+}
+
+function fabdojoDeckForm_saveAdd() {
+    alert('saveAdd')
+}
+
+function fabdojoDeckForm_saveEdit() {
+    alert('saveEdit')
+}
+
+function fabdojoDeckForm_save() {
+    var post = {}
+    jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input').each(function () {
+        var input = jQuery(this)
+        post[input.attr('name')] = input.is(':checkbox') ? input.is(':checked') : input.val()
+    })
+    jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
+        console.log(response)
     })
 }

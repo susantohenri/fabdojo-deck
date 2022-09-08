@@ -25,6 +25,11 @@ table.fabdojo-card-list tfoot tr:nth-child(odd) {
     background-color: #f8f8f8;
 }
 
+.fabdojo-deck-form .add_card_info {
+    cursor: pointer;
+    color: #3d788a;
+}
+
 .fabdojo-deck-form button {
     background-color: rgba(51, 51, 51, 0.05);
     border-radius: 8px;

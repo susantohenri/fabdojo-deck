@@ -32,7 +32,8 @@ add_shortcode('fabdojo-deck-form', function () {
         'fabdojo-deck-form',
         'fabdojo_deck_form',
         array(
-            'card_info_url' => site_url('wp-json/fabdojo-deck/v1/card_info')
+            'card_info_url' => site_url('wp-json/fabdojo-deck/v1/card_info'),
+            'create_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/create')
         )
     );
 
@@ -149,6 +150,10 @@ add_action('rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'fabdojoGetCardInfo'
     ));
+    register_rest_route('fabdojo-deck/v1', '/deck/create', array(
+        'methods' => 'POST',
+        'callback' => 'fabdojoCreateDeck'
+    ));
 });
 
 function fabdojoDeckSelect2Player()
@@ -245,4 +250,10 @@ function fabdojoGetCardInfo()
         </td>
     </tr>
     ";
+}
+
+function fabdojoCreateDeck()
+{
+    $post = $_POST;
+    return $post;
 }
