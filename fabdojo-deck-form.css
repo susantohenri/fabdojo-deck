@@ -1,0 +1,66 @@
+.fabdojo-deck-form select {
+    width: 90%;
+}
+
+.fabdojo-deck-form table {
+    width: 100%;
+    text-align: left;
+}
+
+table.fabdojo-card-list>thead>tr:nth-child(1)>th {
+    background-color: #78adcb;
+    color: white;
+    padding-left: 10px;
+}
+
+table.fabdojo-card-list>thead>tr:nth-child(2)>th {
+    background-color: #f8f8f8;
+}
+
+table.fabdojo-card-list tbody tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+table.fabdojo-card-list tfoot tr:nth-child(odd) {
+    background-color: #f8f8f8;
+}
+
+.fabdojo-deck-form button {
+    background-color: rgba(51, 51, 51, 0.05);
+    border-radius: 8px;
+    border-width: 0;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    list-style: none;
+    margin: 0;
+    padding: 10px 12px;
+    text-align: center;
+    transition: all 200ms;
+    vertical-align: baseline;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.fabdojo-deck-form button.delete {
+    float: left;
+    background-color: #c11d23;
+}
+
+.fabdojo-deck-form button.save_add {
+    background-color: #78aac5;
+}
+
+.fabdojo-deck-form button.save_edit {
+    background-color: #78aac5;
+}
+
+.fabdojo-deck-form button.save {
+    background-color: #3d788a;
+}
