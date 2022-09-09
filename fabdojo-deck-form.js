@@ -1,5 +1,6 @@
 jQuery(() => {
     fabdojoDeckForm_initSelect2()
+    fabdojoDeckForm_updateCardCount()
     jQuery('.fabdojo-deck-form .add_card_info').click(fabdojoDeckForm_addCardInfo)
     jQuery('.fabdojo-deck-form button.delete').click(fabdojoDeckForm_delete)
     jQuery('.fabdojo-deck-form button.save_add').click(fabdojoDeckForm_saveAdd)
@@ -10,14 +11,19 @@ jQuery(() => {
 function fabdojoDeckForm_initSelect2() {
     jQuery('.fabdojo-deck-form select[data-source]').not('[data-select2-id]').each(function () {
         var source = jQuery(this).attr('data-source')
-        jQuery(this).select2({ ajax: { url: source, dataType: 'json' } })
+        jQuery(this).select2({width: '100%', ajax: { url: source, dataType: 'json' } })
     })
+}
+
+function fabdojoDeckForm_updateCardCount() {
+    jQuery('.fabdojo-deck-form [id="get-card-count"]').html(jQuery('table.fabdojo-card-list tbody tr').length)
 }
 
 function fabdojoDeckForm_addCardInfo() {
     jQuery.get(fabdojo_deck_form.card_info_url, HTML => {
         jQuery('table.fabdojo-card-list tbody').append(HTML)
         fabdojoDeckForm_initSelect2()
+        fabdojoDeckForm_updateCardCount()
     })
 }
 

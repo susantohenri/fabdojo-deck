@@ -171,7 +171,7 @@ function fabdojoDeckSelect2Player()
         $posts->the_post();
         $result->results[] = (object) array(
             'id' => get_the_id(),
-            'text' => get_the_title()
+            'text' => get_the_title() . ' - ' . get_field('gem_id')
         );
     }
     return $result;
@@ -192,7 +192,7 @@ function fabdojoDeckSelect2Event()
         $posts->the_post();
         $result->results[] = (object) array(
             'id' => get_the_id(),
-            'text' => get_the_title()
+            'text' => get_the_title() . ' : ' . get_field('event_date')
         );
     }
     return $result;
@@ -254,6 +254,23 @@ function fabdojoGetCardInfo()
 
 function fabdojoCreateDeck()
 {
-    $post = $_POST;
-    return $post;
+    $post_id = wp_insert_post(array(
+        "post_author" => 1,
+        "post_status" => "publish",
+        "post_type" => "decklist",
+    ));
+
+    update_field('related_player', $_POST['player-id'], $post_id);
+    update_field('related_event', $_POST['event-id'], $post_id);
+    update_field('related_hero', $_POST['hero-id'], $post_id);
+
+    wp_update_post(array(
+        'ID' => $post_id,
+        'post_title' =>
+            get_field('related_player', $post_id)->post_title
+            . ' - ' .
+            get_field('related_event', $post_id)->post_title
+    ));
+
+    return $post_id;
 }
