@@ -41,10 +41,26 @@ function fabdojoDeckForm_saveEdit() {
 
 function fabdojoDeckForm_save() {
     var post = {}
-    jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input').each(function () {
+    jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input')
+    .not('[name$="[]"]')
+    .each(function () {
         var input = jQuery(this)
         post[input.attr('name')] = input.is(':checkbox') ? input.is(':checked') : input.val()
     })
+
+    arrayInputNames = jQuery('.fabdojo-deck-form [name$="[]"]')
+        .map(function () { return this.name })
+        .get()
+        .filter((v, i, a) => a.indexOf(v) === i)
+
+    for (var name of arrayInputNames) {
+        post[name] = []
+        jQuery(`.fabdojo-deck-form [name="${name}"]`).each(function () {
+            var input = jQuery(this)
+            post[name].push(input.is(':checkbox') ? input.is(':checked') : input.val())
+        })
+    }
+
     jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
         console.log(response)
     })

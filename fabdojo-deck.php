@@ -48,6 +48,7 @@ add_shortcode('fabdojo-deck-form', function () {
 
     return "
         <div class='fabdojo-deck-form'>
+            <input type='hidden' name='post-id' value='0'>
             <table>
                 <tr>
                     <td>
@@ -263,6 +264,15 @@ function fabdojoCreateDeck()
     update_field('related_player', $_POST['player-id'], $post_id);
     update_field('related_event', $_POST['event-id'], $post_id);
     update_field('related_hero', $_POST['hero-id'], $post_id);
+    update_field('player_standing', $_POST['position'], $post_id);
+    
+    global $wpdb;
+    foreach ($_POST['card-name'] as $index => $cardId) {
+        $wpdb->query("
+            INSERT INTO `wp_fd_decklist_info` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
+            VALUES ('', $post_id, '{$cardId}', {$_POST['card-qty'][$index]}, NULL);
+        ");
+    }
 
     wp_update_post(array(
         'ID' => $post_id,
