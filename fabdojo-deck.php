@@ -33,7 +33,9 @@ add_shortcode('fabdojo-deck-form', function () {
         'fabdojo_deck_form',
         array(
             'card_info_url' => site_url('wp-json/fabdojo-deck/v1/card_info'),
-            'create_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/create')
+            'create_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/create'),
+            'redirect_after_save_url' => site_url(),
+            'delete_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/delete')
         )
     );
 
@@ -52,7 +54,7 @@ add_shortcode('fabdojo-deck-form', function () {
             <table>
                 <tr>
                     <td>
-                        <label>Player id:</label>
+                        <label>Player:</label>
                     </td>
                     <td>
                         <select name='player-id' data-source='{$player_dropdown_source}'></select>
@@ -154,6 +156,10 @@ add_action('rest_api_init', function () {
     register_rest_route('fabdojo-deck/v1', '/deck/create', array(
         'methods' => 'POST',
         'callback' => 'fabdojoCreateDeck'
+    ));
+    register_rest_route('fabdojo-deck/v1', '/deck/delete', array(
+        'methods' => 'POST',
+        'callback' => 'fabdojoDeleteDeck'
     ));
 });
 
@@ -267,20 +273,28 @@ function fabdojoCreateDeck()
     update_field('player_standing', $_POST['position'], $post_id);
     
     global $wpdb;
-    foreach ($_POST['card-name'] as $index => $cardId) {
-        $wpdb->query("
+    if (isset ($_POST['card-name'])) foreach ($_POST['card-name'] as $index => $cardId) {
+        $cardCount = absint($_POST['card-qty'][$index]);
+        if ('false' === $_POST['card-delete'][$index]) $wpdb->query("
             INSERT INTO `wp_fd_decklist_info` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
-            VALUES ('', $post_id, '{$cardId}', {$_POST['card-qty'][$index]}, NULL);
+            VALUES ('', $post_id, '{$cardId}', {$cardCount}, NULL);
         ");
     }
 
+    $player = get_field('related_player', $post_id);
+    $player = $player ? $player->post_title: '';
+    $event = get_field('related_event', $post_id);
+    $event = $event ? $event->post_title: '';
+    $title = "$player - $event";
+    if ('' === $player || '' === $event || ('' === $player && '' === $event)) $title = str_replace(' - ', '', $title);
     wp_update_post(array(
         'ID' => $post_id,
-        'post_title' =>
-            get_field('related_player', $post_id)->post_title
-            . ' - ' .
-            get_field('related_event', $post_id)->post_title
+        'post_title' => $title
     ));
 
     return $post_id;
+}
+
+function fabdojoDeleteDeck () {
+    return wp_delete_post($_POST['id']);
 }

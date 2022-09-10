@@ -11,7 +11,7 @@ jQuery(() => {
 function fabdojoDeckForm_initSelect2() {
     jQuery('.fabdojo-deck-form select[data-source]').not('[data-select2-id]').each(function () {
         var source = jQuery(this).attr('data-source')
-        jQuery(this).select2({width: '100%', ajax: { url: source, dataType: 'json' } })
+        jQuery(this).select2({ width: '100%', ajax: { url: source, dataType: 'json' } })
     })
 }
 
@@ -28,11 +28,21 @@ function fabdojoDeckForm_addCardInfo() {
 }
 
 function fabdojoDeckForm_delete() {
-    alert('delete')
+    if (confirm("Are you sure ?") == true) {
+        jQuery.post(fabdojo_deck_form.delete_deck_url, {
+            id: jQuery(`.fabdojo-deck-form [name='post-id']`).val()
+        }, response => {
+            alert('Deleted!')
+        })
+    }
 }
 
 function fabdojoDeckForm_saveAdd() {
-    alert('saveAdd')
+    var post = fabdojoDeckForm_collectFormData()
+    jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
+        jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input').val('').trigger('change')
+        jQuery('table.fabdojo-card-list tbody').html('')
+    })
 }
 
 function fabdojoDeckForm_saveEdit() {
@@ -40,13 +50,20 @@ function fabdojoDeckForm_saveEdit() {
 }
 
 function fabdojoDeckForm_save() {
+    var post = fabdojoDeckForm_collectFormData()
+    jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
+        window.location = fabdojo_deck_form.redirect_after_save_url
+    })
+}
+
+function fabdojoDeckForm_collectFormData() {
     var post = {}
     jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input')
-    .not('[name$="[]"]')
-    .each(function () {
-        var input = jQuery(this)
-        post[input.attr('name')] = input.is(':checkbox') ? input.is(':checked') : input.val()
-    })
+        .not('[name$="[]"]')
+        .each(function () {
+            var input = jQuery(this)
+            post[input.attr('name')] = input.is(':checkbox') ? input.is(':checked') : input.val()
+        })
 
     arrayInputNames = jQuery('.fabdojo-deck-form [name$="[]"]')
         .map(function () { return this.name })
@@ -60,8 +77,5 @@ function fabdojoDeckForm_save() {
             post[name].push(input.is(':checkbox') ? input.is(':checked') : input.val())
         })
     }
-
-    jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
-        console.log(response)
-    })
+    return post
 }
