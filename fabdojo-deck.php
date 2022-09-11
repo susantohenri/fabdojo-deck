@@ -33,8 +33,9 @@ add_shortcode('fabdojo-deck-form', function () {
         'fabdojo_deck_form',
         array(
             'card_info_url' => site_url('wp-json/fabdojo-deck/v1/card_info'),
-            'create_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/create'),
+            'save_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/save'),
             'redirect_after_save_url' => site_url(),
+            'retrieve_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/retrieve'),
             'delete_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/delete')
         )
     );
@@ -153,9 +154,13 @@ add_action('rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'fabdojoGetCardInfo'
     ));
-    register_rest_route('fabdojo-deck/v1', '/deck/create', array(
+    register_rest_route('fabdojo-deck/v1', '/deck/save', array(
         'methods' => 'POST',
-        'callback' => 'fabdojoCreateDeck'
+        'callback' => 'fabdojoSaveDeck'
+    ));
+    register_rest_route('fabdojo-deck/v1', '/deck/retrieve', array(
+        'methods' => 'GET',
+        'callback' => 'fabdojoRetrieveDeck'
     ));
     register_rest_route('fabdojo-deck/v1', '/deck/delete', array(
         'methods' => 'POST',
@@ -259,7 +264,7 @@ function fabdojoGetCardInfo()
     ";
 }
 
-function fabdojoCreateDeck()
+function fabdojoSaveDeck()
 {
     $post_id = wp_insert_post(array(
         "post_author" => 1,
@@ -271,9 +276,9 @@ function fabdojoCreateDeck()
     update_field('related_event', $_POST['event-id'], $post_id);
     update_field('related_hero', $_POST['hero-id'], $post_id);
     update_field('player_standing', $_POST['position'], $post_id);
-    
+
     global $wpdb;
-    if (isset ($_POST['card-name'])) foreach ($_POST['card-name'] as $index => $cardId) {
+    if (isset($_POST['card-name'])) foreach ($_POST['card-name'] as $index => $cardId) {
         $cardCount = absint($_POST['card-qty'][$index]);
         if ('false' === $_POST['card-delete'][$index]) $wpdb->query("
             INSERT INTO `wp_fd_decklist_info` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
@@ -282,9 +287,9 @@ function fabdojoCreateDeck()
     }
 
     $player = get_field('related_player', $post_id);
-    $player = $player ? $player->post_title: '';
+    $player = $player ? $player->post_title : '';
     $event = get_field('related_event', $post_id);
-    $event = $event ? $event->post_title: '';
+    $event = $event ? $event->post_title : '';
     $title = "$player - $event";
     if ('' === $player || '' === $event || ('' === $player && '' === $event)) $title = str_replace(' - ', '', $title);
     wp_update_post(array(
@@ -295,6 +300,44 @@ function fabdojoCreateDeck()
     return $post_id;
 }
 
-function fabdojoDeleteDeck () {
+function fabdojoRetrieveDeck()
+{
+    $post_id = $_GET['post_id'];
+    $deck = new stdClass();
+
+    if ($player = get_field('related_player', $post_id)) {
+        $deck->player_id = $player->ID;
+        $deck->player_name = $player->post_title;
+        if ($gem = get_field('gem_id', $deck->player_id, false)) {
+            $deck->player_name .= ' - ' . $gem;
+        }
+    }
+
+    if ($event = get_field('related_event', $post_id)) {
+        $deck->event_id = $event->ID;
+        $deck->event_name = $event->post_title;
+        if ($event_date = get_field('event_date', $deck->event_id)) {
+            $deck->event_name .= ' - ' . $event_date;
+        }
+    }
+
+    if ($hero = get_field('related_hero', $post_id)) {
+        $deck->hero_id = $hero->ID;
+        $deck->hero_name = $hero->post_title;
+    }
+
+    if ($player_standing = get_field('player_standing', $post_id)) {
+        $deck->position = $player_standing;
+    }
+
+    global $wpdb;
+    $cards = $wpdb->query("SELECT * FROM wp_fd_decklist_info WHERE post_id = {$post_id}");
+    return $cards;
+
+    return $deck;
+}
+
+function fabdojoDeleteDeck()
+{
     return wp_delete_post($_POST['id']);
 }

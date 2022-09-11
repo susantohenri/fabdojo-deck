@@ -39,19 +39,24 @@ function fabdojoDeckForm_delete() {
 
 function fabdojoDeckForm_saveAdd() {
     var post = fabdojoDeckForm_collectFormData()
-    jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
+    jQuery.post(fabdojo_deck_form.save_deck_url, post, response => {
         jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input').val('').trigger('change')
         jQuery('table.fabdojo-card-list tbody').html('')
     })
 }
 
 function fabdojoDeckForm_saveEdit() {
-    alert('saveEdit')
+    var post = fabdojoDeckForm_collectFormData()
+    jQuery.post(fabdojo_deck_form.save_deck_url, post, post_id => {
+        jQuery.get(fabdojo_deck_form.retrieve_deck_url, {post_id}, deck => {
+            console.log(deck)
+        })
+    })
 }
 
 function fabdojoDeckForm_save() {
     var post = fabdojoDeckForm_collectFormData()
-    jQuery.post(fabdojo_deck_form.create_deck_url, post, response => {
+    jQuery.post(fabdojo_deck_form.save_deck_url, post, response => {
         window.location = fabdojo_deck_form.redirect_after_save_url
     })
 }
