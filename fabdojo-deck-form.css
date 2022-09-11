@@ -25,6 +25,10 @@ table.fabdojo-card-list tfoot tr:nth-child(odd) {
     background-color: #f8f8f8;
 }
 
+table.fabdojo-card-list input[name*="qty"] {
+    text-align: right;
+}
+
 .fabdojo-deck-form .add_card_info {
     cursor: pointer;
     color: #3d788a;

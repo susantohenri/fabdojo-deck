@@ -33,6 +33,7 @@ add_shortcode('fabdojo-deck-form', function () {
         'fabdojo_deck_form',
         array(
             'card_info_url' => site_url('wp-json/fabdojo-deck/v1/card_info'),
+            'card_dropdown_source' => site_url('wp-json/fabdojo-deck/v1/cards'),
             'save_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/save'),
             'redirect_after_save_url' => site_url(),
             'retrieve_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/retrieve'),
@@ -150,10 +151,6 @@ add_action('rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'fabdojoDeckSelect2Card'
     ));
-    register_rest_route('fabdojo-deck/v1', '/card_info', array(
-        'methods' => 'GET',
-        'callback' => 'fabdojoGetCardInfo'
-    ));
     register_rest_route('fabdojo-deck/v1', '/deck/save', array(
         'methods' => 'POST',
         'callback' => 'fabdojoSaveDeck'
@@ -246,24 +243,6 @@ function fabdojoDeckSelect2Card()
     return $result;
 }
 
-function fabdojoGetCardInfo()
-{
-    $card_dropdown_source = site_url('wp-json/fabdojo-deck/v1/cards');
-    return "
-    <tr>
-        <td width='50%'>
-            <select name='card-name[]' data-source='{$card_dropdown_source}'></select>
-        </td>
-        <td>
-            <input type='text' name='card-qty[]'>
-        </td>
-        <td>
-            <input type='checkbox' name='card-delete[]'>
-        </td>
-    </tr>
-    ";
-}
-
 function fabdojoSaveDeck()
 {
     $post_id = wp_insert_post(array(
@@ -304,6 +283,7 @@ function fabdojoRetrieveDeck()
 {
     $post_id = $_GET['post_id'];
     $deck = new stdClass();
+    $deck->post_id = $post_id;
 
     if ($player = get_field('related_player', $post_id)) {
         $deck->player_id = $player->ID;
@@ -331,8 +311,18 @@ function fabdojoRetrieveDeck()
     }
 
     global $wpdb;
-    $cards = $wpdb->query("SELECT * FROM wp_fd_decklist_info WHERE post_id = {$post_id}");
-    return $cards;
+
+    $getCards = "
+        SELECT
+            {$wpdb->prefix}fd_decklist_info.decklist_card id
+            , CONCAT({$wpdb->prefix}fd_cardlist.name, ' - ', {$wpdb->prefix}fd_cardlist.pitch) text
+            , {$wpdb->prefix}fd_decklist_info.decklist_quantity qty
+        FROM {$wpdb->prefix}fd_decklist_info
+        LEFT JOIN {$wpdb->prefix}fd_cardlist ON {$wpdb->prefix}fd_decklist_info.decklist_card = {$wpdb->prefix}fd_cardlist.card_id
+        WHERE {$wpdb->prefix}fd_decklist_info.post_id = {$post_id}
+        ORDER BY {$wpdb->prefix}fd_decklist_info.id ASC
+    ";
+    $deck->cards = $wpdb->get_results($getCards);
 
     return $deck;
 }

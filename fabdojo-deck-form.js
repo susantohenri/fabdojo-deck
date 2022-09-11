@@ -1,7 +1,9 @@
 jQuery(() => {
     fabdojoDeckForm_initSelect2()
     fabdojoDeckForm_updateCardCount()
-    jQuery('.fabdojo-deck-form .add_card_info').click(fabdojoDeckForm_addCardInfo)
+    jQuery('.fabdojo-deck-form .add_card_info').click(() => {
+        fabdojoDeckForm_addCardInfo({})
+    })
     jQuery('.fabdojo-deck-form button.delete').click(fabdojoDeckForm_delete)
     jQuery('.fabdojo-deck-form button.save_add').click(fabdojoDeckForm_saveAdd)
     jQuery('.fabdojo-deck-form button.save_edit').click(fabdojoDeckForm_saveEdit)
@@ -19,12 +21,29 @@ function fabdojoDeckForm_updateCardCount() {
     jQuery('.fabdojo-deck-form [id="get-card-count"]').html(jQuery('table.fabdojo-card-list tbody tr').length)
 }
 
-function fabdojoDeckForm_addCardInfo() {
-    jQuery.get(fabdojo_deck_form.card_info_url, HTML => {
-        jQuery('table.fabdojo-card-list tbody').append(HTML)
-        fabdojoDeckForm_initSelect2()
-        fabdojoDeckForm_updateCardCount()
-    })
+function fabdojoDeckForm_addCardInfo(cardData) {
+    cardData = !jQuery.isEmptyObject(cardData) ? cardData : {
+        id: '',
+        text: '',
+        qty: 0
+    }
+    var option = '' === cardData.id ? '' : `<option value="${cardData.id}">${cardData.text}</option>`
+    var cardRow = `
+        <tr>
+            <td width='50%'>
+                <select name='card-name[${cardData.id}]' data-source='${fabdojo_deck_form.card_dropdown_source}'>${option}</select>
+            </td>
+            <td>
+                <input type='text' name='card-qty[${cardData.id}]' value="${cardData.qty}">
+            </td>
+            <td>
+                <input type='checkbox' name='card-delete[${cardData.id}]'>
+            </td>
+        </tr>
+    `
+    jQuery('table.fabdojo-card-list tbody').append(cardRow)
+    fabdojoDeckForm_initSelect2()
+    fabdojoDeckForm_updateCardCount()
 }
 
 function fabdojoDeckForm_delete() {
@@ -39,17 +58,15 @@ function fabdojoDeckForm_delete() {
 
 function fabdojoDeckForm_saveAdd() {
     var post = fabdojoDeckForm_collectFormData()
-    jQuery.post(fabdojo_deck_form.save_deck_url, post, response => {
-        jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input').val('').trigger('change')
-        jQuery('table.fabdojo-card-list tbody').html('')
-    })
+    jQuery.post(fabdojo_deck_form.save_deck_url, post, fabdojoDeckForm_resetFormData)
 }
 
 function fabdojoDeckForm_saveEdit() {
     var post = fabdojoDeckForm_collectFormData()
     jQuery.post(fabdojo_deck_form.save_deck_url, post, post_id => {
-        jQuery.get(fabdojo_deck_form.retrieve_deck_url, {post_id}, deck => {
-            console.log(deck)
+        jQuery.get(fabdojo_deck_form.retrieve_deck_url, { post_id }, deck => {
+            fabdojoDeckForm_resetFormData()
+            fabdojoDeckForm_setupFormData(deck)
         })
     })
 }
@@ -83,4 +100,18 @@ function fabdojoDeckForm_collectFormData() {
         })
     }
     return post
+}
+
+function fabdojoDeckForm_resetFormData() {
+    jQuery('.fabdojo-deck-form select, .fabdojo-deck-form input').val('').trigger('change')
+    jQuery('table.fabdojo-card-list tbody').html('')
+}
+
+function fabdojoDeckForm_setupFormData(deck) {
+    jQuery('.fabdojo-deck-form [name="post-id"]').val(deck.post_id)
+    jQuery('.fabdojo-deck-form [name="player-id"]').html(`<option value="${deck.player_id}">${deck.player_name}</option>`)
+    jQuery('.fabdojo-deck-form [name="event-id"]').html(`<option value="${deck.eventr_id}">${deck.event_name}</option>`)
+    jQuery('.fabdojo-deck-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
+    jQuery('.fabdojo-deck-form [name="position"]').val(deck.position)
+    for (var card of deck.cards) fabdojoDeckForm_addCardInfo(card)
 }
