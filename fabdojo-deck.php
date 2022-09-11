@@ -36,6 +36,7 @@ add_shortcode('fabdojo-deck-form', function () {
             'card_dropdown_source' => site_url('wp-json/fabdojo-deck/v1/cards'),
             'save_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/save'),
             'redirect_after_save_url' => site_url(),
+            'redirect_after_delete_url' => site_url(),
             'retrieve_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/retrieve'),
             'delete_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/delete')
         )

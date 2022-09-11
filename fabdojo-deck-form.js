@@ -52,7 +52,7 @@ function fabdojoDeckForm_delete() {
         jQuery.post(fabdojo_deck_form.delete_deck_url, {
             id: jQuery(`.fabdojo-deck-form [name='post-id']`).val()
         }, response => {
-            alert('Deleted!')
+            window.location = fabdojo_deck_form.redirect_after_delete_url
         })
     }
 }
@@ -111,7 +111,7 @@ function fabdojoDeckForm_resetFormData() {
 function fabdojoDeckForm_setupFormData(deck) {
     jQuery('.fabdojo-deck-form [name="post-id"]').val(deck.post_id)
     if (deck.player_id) jQuery('.fabdojo-deck-form [name="player-id"]').html(`<option value="${deck.player_id}">${deck.player_name}</option>`)
-    if (deck.event_id) jQuery('.fabdojo-deck-form [name="event-id"]').html(`<option value="${deck.eventr_id}">${deck.event_name}</option>`)
+    if (deck.event_id) jQuery('.fabdojo-deck-form [name="event-id"]').html(`<option value="${deck.event_id}">${deck.event_name}</option>`)
     if (deck.hero_id) jQuery('.fabdojo-deck-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
     jQuery('.fabdojo-deck-form [name="position"]').val(deck.position)
     for (var card of deck.cards) fabdojoDeckForm_addCardInfo(card)
