@@ -23,6 +23,7 @@ function fabdojoDeckForm_updateCardCount() {
 
 function fabdojoDeckForm_addCardInfo(cardData) {
     cardData = !jQuery.isEmptyObject(cardData) ? cardData : {
+        rowId: '',
         id: '',
         text: '',
         qty: 0
@@ -31,13 +32,13 @@ function fabdojoDeckForm_addCardInfo(cardData) {
     var cardRow = `
         <tr>
             <td width='50%'>
-                <select name='card-name[${cardData.id}]' data-source='${fabdojo_deck_form.card_dropdown_source}'>${option}</select>
+                <select name='card-name[${cardData.rowId}]' data-source='${fabdojo_deck_form.card_dropdown_source}'>${option}</select>
             </td>
             <td>
-                <input type='text' name='card-qty[${cardData.id}]' value="${cardData.qty}">
+                <input type='text' name='card-qty[${cardData.rowId}]' value="${cardData.qty}">
             </td>
             <td>
-                <input type='checkbox' name='card-delete[${cardData.id}]'>
+                <input type='checkbox' name='card-delete[${cardData.rowId}]'>
             </td>
         </tr>
     `
@@ -109,9 +110,9 @@ function fabdojoDeckForm_resetFormData() {
 
 function fabdojoDeckForm_setupFormData(deck) {
     jQuery('.fabdojo-deck-form [name="post-id"]').val(deck.post_id)
-    jQuery('.fabdojo-deck-form [name="player-id"]').html(`<option value="${deck.player_id}">${deck.player_name}</option>`)
-    jQuery('.fabdojo-deck-form [name="event-id"]').html(`<option value="${deck.eventr_id}">${deck.event_name}</option>`)
-    jQuery('.fabdojo-deck-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
+    if (deck.player_id) jQuery('.fabdojo-deck-form [name="player-id"]').html(`<option value="${deck.player_id}">${deck.player_name}</option>`)
+    if (deck.event_id) jQuery('.fabdojo-deck-form [name="event-id"]').html(`<option value="${deck.eventr_id}">${deck.event_name}</option>`)
+    if (deck.hero_id) jQuery('.fabdojo-deck-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
     jQuery('.fabdojo-deck-form [name="position"]').val(deck.position)
     for (var card of deck.cards) fabdojoDeckForm_addCardInfo(card)
 }

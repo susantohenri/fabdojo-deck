@@ -245,7 +245,7 @@ function fabdojoDeckSelect2Card()
 
 function fabdojoSaveDeck()
 {
-    $post_id = wp_insert_post(array(
+    $post_id = '0' !== $_POST['post-id'] ? $_POST['post-id'] : wp_insert_post(array(
         "post_author" => 1,
         "post_status" => "publish",
         "post_type" => "decklist",
@@ -257,12 +257,31 @@ function fabdojoSaveDeck()
     update_field('player_standing', $_POST['position'], $post_id);
 
     global $wpdb;
-    if (isset($_POST['card-name'])) foreach ($_POST['card-name'] as $index => $cardId) {
-        $cardCount = absint($_POST['card-qty'][$index]);
-        if ('false' === $_POST['card-delete'][$index]) $wpdb->query("
-            INSERT INTO `wp_fd_decklist_info` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
-            VALUES ('', $post_id, '{$cardId}', {$cardCount}, NULL);
-        ");
+    $decklistInfoTable = "{$wpdb->prefix}fd_decklist_info";
+
+    if (isset($_POST['card-name'])) {
+        foreach ($_POST['card-name'] as $rowId => $cardId) {
+            if (0 !== strpos($rowId, 'update-')) {
+                $cardCount = absint($_POST['card-qty'][$rowId]);
+                if ('false' === $_POST['card-delete'][$rowId]) $wpdb->query("
+                    INSERT INTO `{$decklistInfoTable}` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
+                    VALUES ('', $post_id, '{$cardId}', {$cardCount}, NULL);
+                ");
+            } else {
+                $recordId = str_replace('update-', '', $rowId);
+                if ('true' === $_POST['card-delete'][$rowId]) $wpdb->query("DELETE FROM {$decklistInfoTable} WHERE id = {$recordId}");
+                else {
+                    $cardCount = absint($_POST['card-qty'][$rowId]);
+                    $wpdb->query("
+                        UPDATE {$decklistInfoTable}
+                        SET
+                            decklist_card = '{$cardId}'
+                            , decklist_quantity = {$cardCount}
+                        WHERE id = {$recordId}
+                    ");
+                }
+            }
+        }
     }
 
     $player = get_field('related_player', $post_id);
@@ -314,7 +333,8 @@ function fabdojoRetrieveDeck()
 
     $getCards = "
         SELECT
-            {$wpdb->prefix}fd_decklist_info.decklist_card id
+            CONCAT('update-', {$wpdb->prefix}fd_decklist_info.id) rowId
+            , {$wpdb->prefix}fd_decklist_info.decklist_card id
             , CONCAT({$wpdb->prefix}fd_cardlist.name, ' - ', {$wpdb->prefix}fd_cardlist.pitch) text
             , {$wpdb->prefix}fd_decklist_info.decklist_quantity qty
         FROM {$wpdb->prefix}fd_decklist_info
