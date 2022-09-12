@@ -184,6 +184,16 @@ function fabdojoDeckSelect2Player()
             'text' => get_the_title() . ' - ' . get_field('gem_id')
         );
     }
+
+    if ($term = $_GET['term']) {
+        if ('' !== $term) {
+            $results = array();
+            foreach ($result->results as $option) {
+                if (stripos ($option->text, $term) !== false) $results[] = $option;
+            }
+            $result->results = $results;
+        }
+    }
     return $result;
 }
 
@@ -204,6 +214,16 @@ function fabdojoDeckSelect2Event()
             'id' => get_the_id(),
             'text' => get_the_title() . ' : ' . get_field('event_date')
         );
+    }
+
+    if ($term = $_GET['term']) {
+        if ('' !== $term) {
+            $results = array();
+            foreach ($result->results as $option) {
+                if (stripos ($option->text, $term) !== false) $results[] = $option;
+            }
+            $result->results = $results;
+        }
     }
     return $result;
 }
@@ -226,6 +246,16 @@ function fabdojoDeckSelect2Hero()
             'text' => get_the_title()
         );
     }
+
+    if ($term = $_GET['term']) {
+        if ('' !== $term) {
+            $results = array();
+            foreach ($result->results as $option) {
+                if (stripos ($option->text, $term) !== false) $results[] = $option;
+            }
+            $result->results = $results;
+        }
+    }
     return $result;
 }
 
@@ -241,6 +271,16 @@ function fabdojoDeckSelect2Card()
             'text' => "{$card->name} - {$card->pitch}",
         );
     }, $wpdb->get_results($query));
+
+    if ($term = $_GET['term']) {
+        if ('' !== $term) {
+            $results = array();
+            foreach ($result->results as $option) {
+                if (stripos ($option->text, $term) !== false) $results[] = $option;
+            }
+            $result->results = $results;
+        }
+    }
     return $result;
 }
 
