@@ -28,7 +28,17 @@ function fabdojoDeckForm_initSelect2() {
 }
 
 function fabdojoDeckForm_updateCardCount() {
-    jQuery('.fabdojo-deck-form [id="get-card-count"]').html(jQuery('table.fabdojo-card-list tbody tr').length)
+    var cardCount = 0
+    jQuery('table.fabdojo-card-list tbody tr').each(function () {
+        cardCount += parseInt(jQuery(this).find(`[name^="card-qty"]`).val())
+    })
+    jQuery('.fabdojo-deck-form [id="get-card-count"]').html(cardCount)
+}
+
+function fabdojoDeckForm_cardQtyBindKeyup () {
+    jQuery(`[name^="card-qty"]`)
+        .unbind('keyup')
+        .bind('keyup', fabdojoDeckForm_updateCardCount)
 }
 
 function fabdojoDeckForm_addCardInfo(cardData) {
@@ -36,9 +46,10 @@ function fabdojoDeckForm_addCardInfo(cardData) {
         rowId: '',
         id: '',
         text: '',
-        qty: 0
+        qty: 39
     }
     var option = '' === cardData.id ? '' : `<option value="${cardData.id}">${cardData.text}</option>`
+    var checkbox = '' === cardData.id ? '' : `<input type='checkbox' name='card-delete[${cardData.rowId}]'>`
     var cardRow = `
         <tr>
             <td width='50%'>
@@ -48,13 +59,14 @@ function fabdojoDeckForm_addCardInfo(cardData) {
                 <input type='text' name='card-qty[${cardData.rowId}]' value="${cardData.qty}">
             </td>
             <td>
-                <input type='checkbox' name='card-delete[${cardData.rowId}]'>
+                ${checkbox}
             </td>
         </tr>
     `
     jQuery('table.fabdojo-card-list tbody').append(cardRow)
     fabdojoDeckForm_initSelect2()
     fabdojoDeckForm_updateCardCount()
+    fabdojoDeckForm_cardQtyBindKeyup()
 }
 
 function fabdojoDeckForm_delete() {
