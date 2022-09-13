@@ -135,6 +135,91 @@ add_shortcode('fabdojo-deck-form', function () {
     ";
 });
 
+add_action('add_meta_boxes', function () {
+    add_meta_box(
+        'fabdojo-deck-admin-form',
+        'Card Infos',
+        function () {
+            wp_register_script('jquery', 'https://code.jquery.com/jquery-3.6.1.slim.min.js');
+            wp_enqueue_script('jquery');
+            wp_register_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js');
+            wp_enqueue_script('select2');
+            wp_register_script('fabdojo-deck-form', plugin_dir_url(__FILE__) . 'fabdojo-deck-form.js');
+            wp_enqueue_script('fabdojo-deck-form');
+            wp_localize_script(
+                'fabdojo-deck-form',
+                'fabdojo_deck_form',
+                array(
+                    'admin_post_id' => get_the_ID(),
+                    'card_info_url' => site_url('wp-json/fabdojo-deck/v1/card_info'),
+                    'card_dropdown_source' => site_url('wp-json/fabdojo-deck/v1/cards'),
+                    'save_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/save'),
+                    'redirect_after_save_url' => site_url(),
+                    'redirect_after_delete_url' => site_url(),
+                    'retrieve_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/retrieve'),
+                    'delete_deck_url' => site_url('wp-json/fabdojo-deck/v1/deck/delete')
+                )
+            );
+            wp_register_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css');
+            wp_enqueue_style('select2');
+            wp_register_style('fabdojo-deck-form', plugin_dir_url(__FILE__) . 'fabdojo-deck-form.css');
+            wp_enqueue_style('fabdojo-deck-form');
+
+            echo "
+                <table class='fabdojo-card-list'>
+                    <thead>
+                        <tr>
+                            <th>CARD</th>
+                            <th>CARD COUNT</th>
+                            <th>DELETE</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan='3'>
+                                <a class='add_card_info'> + add another card info</a>
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            ";
+        },
+        'decklist',
+        'normal',
+        'default'
+    );
+});
+
+add_action('save_post', function ($post_id) {
+    if (isset($_POST['card-name'])) {
+        global $wpdb;
+        $decklistInfoTable = "{$wpdb->prefix}fd_decklist_info";
+        foreach ($_POST['card-name'] as $rowId => $cardId) {
+            if (0 !== strpos($rowId, 'update-')) {
+                $cardCount = absint($_POST['card-qty'][$rowId]);
+                if (!isset ($_POST['card-delete'][$rowId])) $wpdb->query("
+                    INSERT INTO `{$decklistInfoTable}` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
+                    VALUES ('', $post_id, '{$cardId}', {$cardCount}, NULL);
+                ");
+            } else {
+                $recordId = str_replace('update-', '', $rowId);
+                if (isset ($_POST['card-delete'][$rowId])) $wpdb->query("DELETE FROM {$decklistInfoTable} WHERE id = {$recordId}");
+                else {
+                    $cardCount = absint($_POST['card-qty'][$rowId]);
+                    $wpdb->query("
+                        UPDATE {$decklistInfoTable}
+                        SET
+                            decklist_card = '{$cardId}'
+                            , decklist_quantity = {$cardCount}
+                        WHERE id = {$recordId}
+                    ");
+                }
+            }
+        }
+    }
+});
+
 add_action('rest_api_init', function () {
     register_rest_route('fabdojo-deck/v1', '/players', array(
         'methods' => 'GET',
@@ -189,7 +274,7 @@ function fabdojoDeckSelect2Player()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos ($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text, $term) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -220,7 +305,7 @@ function fabdojoDeckSelect2Event()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos ($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text, $term) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -251,7 +336,7 @@ function fabdojoDeckSelect2Hero()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos ($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text, $term) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -276,7 +361,7 @@ function fabdojoDeckSelect2Card()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos ($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text, $term) !== false) $results[] = $option;
             }
             $result->results = $results;
         }

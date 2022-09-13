@@ -1,17 +1,27 @@
 jQuery(() => {
     fabdojoDeckForm_initSelect2()
     fabdojoDeckForm_updateCardCount()
-    jQuery('.fabdojo-deck-form .add_card_info').click(() => {
+    jQuery('.fabdojo-deck-form .add_card_info')
+    jQuery(`
+        .fabdojo-deck-form .add_card_info,
+        #fabdojo-deck-admin-form .add_card_info
+    `).click(() => {
         fabdojoDeckForm_addCardInfo({})
     })
     jQuery('.fabdojo-deck-form button.delete').click(fabdojoDeckForm_delete)
     jQuery('.fabdojo-deck-form button.save_add').click(fabdojoDeckForm_saveAdd)
     jQuery('.fabdojo-deck-form button.save_edit').click(fabdojoDeckForm_saveEdit)
     jQuery('.fabdojo-deck-form button.save').click(fabdojoDeckForm_save)
+
+    if (fabdojo_deck_form.admin_post_id) fabdojoDeckForm_adminRetrieve(fabdojo_deck_form.admin_post_id)
+
 })
 
 function fabdojoDeckForm_initSelect2() {
-    jQuery('.fabdojo-deck-form select[data-source]').not('[data-select2-id]').each(function () {
+    jQuery(`
+        .fabdojo-deck-form select[data-source],
+        #fabdojo-deck-admin-form select[data-source]
+    `).not('[data-select2-id]').each(function () {
         var source = jQuery(this).attr('data-source')
         jQuery(this).select2({ width: '100%', ajax: { url: source, dataType: 'json' } })
     })
@@ -115,4 +125,11 @@ function fabdojoDeckForm_setupFormData(deck) {
     if (deck.hero_id) jQuery('.fabdojo-deck-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
     jQuery('.fabdojo-deck-form [name="position"]').val(deck.position)
     for (var card of deck.cards) fabdojoDeckForm_addCardInfo(card)
+}
+
+function fabdojoDeckForm_adminRetrieve(post_id) {
+    jQuery.get(fabdojo_deck_form.retrieve_deck_url, { post_id }, deck => {
+        fabdojoDeckForm_resetFormData()
+        fabdojoDeckForm_setupFormData(deck)
+    })
 }

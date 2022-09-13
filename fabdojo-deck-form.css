@@ -1,8 +1,6 @@
-.fabdojo-deck-form select {
-    /* width: 90%; */
-}
-
-.fabdojo-deck-form table {
+.fabdojo-deck-form table,
+#fabdojo-deck-admin-form table
+{
     width: 100%;
     text-align: left;
 }
@@ -29,7 +27,8 @@ table.fabdojo-card-list input[name*="qty"] {
     text-align: right;
 }
 
-.fabdojo-deck-form .add_card_info {
+.fabdojo-deck-form .add_card_info,
+#fabdojo-deck-admin-form .add_card_info {
     cursor: pointer;
     color: #3d788a;
 }
