@@ -14,6 +14,7 @@ jQuery(() => {
     jQuery('.fabdojo-deck-form button.save').click(fabdojoDeckForm_save)
 
     if (fabdojo_deck_form.admin_post_id) fabdojoDeckForm_adminRetrieve(fabdojo_deck_form.admin_post_id)
+    else for (var count = 1; count <= 39; count++) fabdojoDeckForm_addCardInfo()
 
 })
 
@@ -46,7 +47,7 @@ function fabdojoDeckForm_addCardInfo(cardData) {
         rowId: '',
         id: '',
         text: '',
-        qty: 39
+        qty: 0
     }
     var option = '' === cardData.id ? '' : `<option value="${cardData.id}">${cardData.text}</option>`
     var checkbox = '' === cardData.id ? '' : `<input type='checkbox' name='card-delete[${cardData.rowId}]'>`
