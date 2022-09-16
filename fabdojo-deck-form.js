@@ -17,7 +17,7 @@ jQuery(() => {
 })
 
 function fabdojoDeckForm_prepareEmptyCardList () {
-    for (var count = 1; count <= 39; count++) fabdojoDeckForm_addCardInfo()
+    for (var row = 1; row <= 39; row++) fabdojoDeckForm_addCardInfo()
 }
 
 function fabdojoDeckForm_initSelect2() {
@@ -38,7 +38,7 @@ function fabdojoDeckForm_updateCardCount() {
         var count = parseInt(row.find(`[name^="card-qty"]`).val())
         cardCount += null !== cardId ? count : 0
     })
-    jQuery('.fabdojo-deck-form [id="get-card-count"]').html(cardCount)
+    jQuery('.fabdojo-deck-form [id="get-card-count"], #fabdojo-deck-admin-form [id="get-card-count"]').html(cardCount)
 }
 
 function fabdojoDeckForm_addCardInfo(cardData) {
@@ -134,10 +134,10 @@ function fabdojoDeckForm_resetFormData() {
 
 function fabdojoDeckForm_setupFormData(deck) {
     jQuery('.fabdojo-deck-form [name="post-id"]').val(deck.post_id)
-    if (deck.player_id) jQuery('.fabdojo-deck-form [name="player-id"]').html(`<option value="${deck.player_id}">${deck.player_name}</option>`)
-    if (deck.event_id) jQuery('.fabdojo-deck-form [name="event-id"]').html(`<option value="${deck.event_id}">${deck.event_name}</option>`)
-    if (deck.hero_id) jQuery('.fabdojo-deck-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
-    jQuery('.fabdojo-deck-form [name="position"]').val(deck.position)
+    if (deck.player_id) jQuery('.fabdojo-deck-form [name="player-id"], #fabdojo-deck-admin-form [name="player-id"]').html(`<option value="${deck.player_id}">${deck.player_name}</option>`)
+    if (deck.event_id) jQuery('.fabdojo-deck-form [name="event-id"], #fabdojo-deck-admin-form [name="event-id"]').html(`<option value="${deck.event_id}">${deck.event_name}</option>`)
+    if (deck.hero_id) jQuery('.fabdojo-deck-form [name="hero-id"], #fabdojo-deck-admin-form [name="hero-id"]').html(`<option value="${deck.hero_id}">${deck.hero_name}</option>`)
+    jQuery('.fabdojo-deck-form [name="position"], #fabdojo-deck-admin-form [name="position"]').val(deck.position)
     for (var card of deck.cards) fabdojoDeckForm_addCardInfo(card)
 }
 

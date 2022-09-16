@@ -165,7 +165,55 @@ add_action('add_meta_boxes', function () {
             wp_register_style('fabdojo-deck-form', plugin_dir_url(__FILE__) . 'fabdojo-deck-form.css');
             wp_enqueue_style('fabdojo-deck-form');
 
+            $player_dropdown_source = site_url('wp-json/fabdojo-deck/v1/players');
+            $event_dropdown_source = site_url('wp-json/fabdojo-deck/v1/events');
+            $hero_dropdown_source = site_url('wp-json/fabdojo-deck/v1/heroes');
+
             echo "
+                <table>
+                    <tr>
+                        <td>
+                            <label>Player:</label>
+                        </td>
+                        <td>
+                            <select name='player-id' data-source='{$player_dropdown_source}'></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Event:</label>
+                        </td>
+                        <td>
+                        <select name='event-id' data-source='{$event_dropdown_source}'></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Hero:</label>
+                        </td>
+                        <td>
+                        <select name='hero-id' data-source='{$hero_dropdown_source}'></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Position:</label>
+                        </td>
+                        <td>
+                            <input type='text' name='position'>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label>Get card count:</label>
+                        </td>
+                        <td>
+                            <label id='get-card-count'>0</label>
+                        </td>
+                    </tr>
+                </table>
+
+                <br>
                 <table class='fabdojo-card-list'>
                     <thead>
                         <tr>
@@ -191,37 +239,55 @@ add_action('add_meta_boxes', function () {
     );
 });
 
-add_action('save_post', function ($post_id) {
-    if (false !== strpos($_SERVER['HTTP_REFERER'], 'wp-admin')) {
-        if (isset($_POST['card-name'])) {
-            global $wpdb;
-            $decklistInfoTable = "{$wpdb->prefix}fd_decklist_info";
-            foreach ($_POST['card-name'] as $rowId => $cardId) {
-                $cardCount = absint($_POST['card-qty'][$rowId]);
-                if (0 !== strpos($rowId, 'update-')) {
-                    if (!isset($_POST['card-delete'][$rowId]) && '' !== $cardId) $wpdb->insert($decklistInfoTable, [
-                        'post_id' => $post_id,
+add_action('save_post', 'fabdojoDeckHookSavePost');
+function fabdojoDeckHookSavePost($post_id)
+{
+    if (false === strpos($_SERVER['HTTP_REFERER'], 'wp-admin')) return;
+    if (!isset($_POST['player-id'])) return;
+
+    update_field('related_player', $_POST['player-id'], $post_id);
+    update_field('related_event', $_POST['event-id'], $post_id);
+    update_field('related_hero', $_POST['hero-id'], $post_id);
+    update_field('player_standing', $_POST['position'], $post_id);
+
+    $player = get_field('related_player', $post_id);
+    $player = $player ? $player->post_title : '';
+    $event = get_field('related_event', $post_id);
+    $event = $event ? $event->post_title : '';
+    $title = "$player - $event";
+    if ('' === $player || '' === $event || ('' === $player && '' === $event)) $title = str_replace(' - ', '', $title);
+    remove_action('save_post', 'fabdojoDeckHookSavePost');
+    wp_update_post(array('ID' => $post_id, 'post_title' => $title));
+    add_action('save_post', 'fabdojoDeckHookSavePost');
+
+    if (isset($_POST['card-name'])) {
+        global $wpdb;
+        $decklistInfoTable = "{$wpdb->prefix}fd_decklist_info";
+        foreach ($_POST['card-name'] as $rowId => $cardId) {
+            $cardCount = absint($_POST['card-qty'][$rowId]);
+            if (0 !== strpos($rowId, 'update-')) {
+                if (!isset($_POST['card-delete'][$rowId]) && '' !== $cardId) $wpdb->insert($decklistInfoTable, [
+                    'post_id' => $post_id,
+                    'decklist_card' => $cardId,
+                    'decklist_quantity' => $cardCount
+                ], ['%d', '%s', '%d']);
+            } else {
+                $recordId = str_replace('update-', '', $rowId);
+                if (isset($_POST['card-delete'][$rowId])) $wpdb->delete($decklistInfoTable, ['id' => $recordId, ['%d']]);
+                else $wpdb->update(
+                    $decklistInfoTable,
+                    [
                         'decklist_card' => $cardId,
                         'decklist_quantity' => $cardCount
-                    ], ['%d', '%s', '%d']);
-                } else {
-                    $recordId = str_replace('update-', '', $rowId);
-                    if (isset($_POST['card-delete'][$rowId])) $wpdb->delete($decklistInfoTable, ['id' => $recordId, ['%d']]);
-                    else $wpdb->update(
-                        $decklistInfoTable,
-                        [
-                            'decklist_card' => $cardId,
-                            'decklist_quantity' => $cardCount
-                        ],
-                        ['id' => $recordId],
-                        ['%s', '%d'],
-                        ['%d']
-                    );
-                }
+                    ],
+                    ['id' => $recordId],
+                    ['%s', '%d'],
+                    ['%d']
+                );
             }
         }
     }
-});
+}
 
 add_action('rest_api_init', function () {
     register_rest_route('fabdojo-deck/v1', '/players', array(
@@ -391,6 +457,17 @@ function fabdojoSaveDeck()
     update_field('related_hero', $_POST['hero-id'], $post_id);
     update_field('player_standing', $_POST['position'], $post_id);
 
+    $player = get_field('related_player', $post_id);
+    $player = $player ? $player->post_title : '';
+    $event = get_field('related_event', $post_id);
+    $event = $event ? $event->post_title : '';
+    $title = "$player - $event";
+    if ('' === $player || '' === $event || ('' === $player && '' === $event)) $title = str_replace(' - ', '', $title);
+    wp_update_post(array(
+        'ID' => $post_id,
+        'post_title' => $title
+    ));
+
     global $wpdb;
     $decklistInfoTable = "{$wpdb->prefix}fd_decklist_info";
 
@@ -402,7 +479,7 @@ function fabdojoSaveDeck()
                     'post_id' => $post_id,
                     'decklist_card' => $cardId,
                     'decklist_quantity' => $cardCount
-                ], ['%d', '%s' , '%d']);
+                ], ['%d', '%s', '%d']);
             } else {
                 $recordId = str_replace('update-', '', $rowId);
                 if ('true' === $_POST['card-delete'][$rowId]) $wpdb->delete($decklistInfoTable, ['id' => $recordId], ['%d']);
@@ -413,17 +490,6 @@ function fabdojoSaveDeck()
             }
         }
     }
-
-    $player = get_field('related_player', $post_id);
-    $player = $player ? $player->post_title : '';
-    $event = get_field('related_event', $post_id);
-    $event = $event ? $event->post_title : '';
-    $title = "$player - $event";
-    if ('' === $player || '' === $event || ('' === $player && '' === $event)) $title = str_replace(' - ', '', $title);
-    wp_update_post(array(
-        'ID' => $post_id,
-        'post_title' => $title
-    ));
 
     return $post_id;
 }
