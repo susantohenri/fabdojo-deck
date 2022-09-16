@@ -197,25 +197,26 @@ add_action('save_post', function ($post_id) {
             global $wpdb;
             $decklistInfoTable = "{$wpdb->prefix}fd_decklist_info";
             foreach ($_POST['card-name'] as $rowId => $cardId) {
+                $cardCount = absint($_POST['card-qty'][$rowId]);
                 if (0 !== strpos($rowId, 'update-')) {
-                    $cardCount = absint($_POST['card-qty'][$rowId]);
-                    if (!isset($_POST['card-delete'][$rowId])) $wpdb->query("
-                        INSERT INTO `{$decklistInfoTable}` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
-                        VALUES ('', $post_id, '{$cardId}', {$cardCount}, NULL);
-                    ");
+                    if (!isset($_POST['card-delete'][$rowId])) $wpdb->insert($decklistInfoTable, [
+                        'post_id' => $post_id,
+                        'decklist_card' => $cardId,
+                        'decklist_quantity' => $cardCount
+                    ], ['%d', '%s', '%d']);
                 } else {
                     $recordId = str_replace('update-', '', $rowId);
-                    if (isset($_POST['card-delete'][$rowId])) $wpdb->query("DELETE FROM {$decklistInfoTable} WHERE id = {$recordId}");
-                    else {
-                        $cardCount = absint($_POST['card-qty'][$rowId]);
-                        $wpdb->query("
-                            UPDATE {$decklistInfoTable}
-                            SET
-                                decklist_card = '{$cardId}'
-                                , decklist_quantity = {$cardCount}
-                            WHERE id = {$recordId}
-                        ");
-                    }
+                    if (isset($_POST['card-delete'][$rowId])) $wpdb->delete($decklistInfoTable, ['id' => $recordId, ['%d']]);
+                    else $wpdb->update(
+                        $decklistInfoTable,
+                        [
+                            'decklist_card' => $cardId,
+                            'decklist_quantity' => $cardCount
+                        ],
+                        ['id' => $recordId],
+                        ['%s', '%d'],
+                        ['%d']
+                    );
                 }
             }
         }
@@ -373,7 +374,7 @@ function fabdojoDeckSelect2Card()
 
 function fabdojoSaveDeck()
 {
-    $post_id = '0' !== $_POST['post-id'] ? $_POST['post-id'] : wp_insert_post(array(
+    $post_id = is_numeric($_POST['post-id']) && $_POST['post-id'] > 0 ? $_POST['post-id'] : wp_insert_post(array(
         "post_author" => 1,
         "post_status" => "publish",
         "post_type" => "decklist",
@@ -389,26 +390,20 @@ function fabdojoSaveDeck()
 
     if (isset($_POST['card-name'])) {
         foreach ($_POST['card-name'] as $rowId => $cardId) {
+            $cardCount = absint($_POST['card-qty'][$rowId]);
             if (0 !== strpos($rowId, 'update-')) {
-                $cardCount = absint($_POST['card-qty'][$rowId]);
-                // if (!isset ($_POST['card-delete'][$rowId])) uncomment this if checkbox exists on create new card info
-                $wpdb->query("
-                    INSERT INTO `{$decklistInfoTable}` (`id`, `post_id`, `decklist_card`, `decklist_quantity`, `decklist_repeater`) 
-                    VALUES ('', $post_id, '{$cardId}', {$cardCount}, NULL);
-                ");
+                $wpdb->insert($decklistInfoTable, [
+                    'post_id' => $post_id,
+                    'decklist_card' => $cardId,
+                    'decklist_quantity' => $cardCount
+                ], ['%d', '%s' , '%d']);
             } else {
                 $recordId = str_replace('update-', '', $rowId);
-                if ('true' === $_POST['card-delete'][$rowId]) $wpdb->query("DELETE FROM {$decklistInfoTable} WHERE id = {$recordId}");
-                else {
-                    $cardCount = absint($_POST['card-qty'][$rowId]);
-                    $wpdb->query("
-                        UPDATE {$decklistInfoTable}
-                        SET
-                            decklist_card = '{$cardId}'
-                            , decklist_quantity = {$cardCount}
-                        WHERE id = {$recordId}
-                    ");
-                }
+                if ('true' === $_POST['card-delete'][$rowId]) $wpdb->delete($decklistInfoTable, ['id' => $recordId], ['%d']);
+                else $wpdb->update($decklistInfoTable, [
+                    'decklist_card' => $cardId,
+                    'decklist_quantity' => $cardCount
+                ], ['id' => $recordId], ['%s', '%d'], ['%d']);
             }
         }
     }
@@ -459,8 +454,7 @@ function fabdojoRetrieveDeck()
     }
 
     global $wpdb;
-
-    $getCards = "
+    $deck->cards = $wpdb->get_results($wpdb->prepare("
         SELECT
             CONCAT('update-', {$wpdb->prefix}fd_decklist_info.id) rowId
             , {$wpdb->prefix}fd_decklist_info.decklist_card id
@@ -468,10 +462,9 @@ function fabdojoRetrieveDeck()
             , {$wpdb->prefix}fd_decklist_info.decklist_quantity qty
         FROM {$wpdb->prefix}fd_decklist_info
         LEFT JOIN {$wpdb->prefix}fd_cardlist ON {$wpdb->prefix}fd_decklist_info.decklist_card = {$wpdb->prefix}fd_cardlist.card_id
-        WHERE {$wpdb->prefix}fd_decklist_info.post_id = {$post_id}
+        WHERE {$wpdb->prefix}fd_decklist_info.post_id = %d
         ORDER BY {$wpdb->prefix}fd_decklist_info.id ASC
-    ";
-    $deck->cards = $wpdb->get_results($getCards);
+    ", $post_id));
 
     return $deck;
 }
