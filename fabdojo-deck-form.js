@@ -1,7 +1,5 @@
 jQuery(() => {
     fabdojoDeckForm_initSelect2()
-    fabdojoDeckForm_updateCardCount()
-    jQuery('.fabdojo-deck-form .add_card_info')
     jQuery(`
         .fabdojo-deck-form .add_card_info,
         #fabdojo-deck-admin-form .add_card_info
@@ -13,10 +11,14 @@ jQuery(() => {
     jQuery('.fabdojo-deck-form button.save_edit').click(fabdojoDeckForm_saveEdit)
     jQuery('.fabdojo-deck-form button.save').click(fabdojoDeckForm_save)
 
-    if (fabdojo_deck_form.admin_post_id) fabdojoDeckForm_adminRetrieve(fabdojo_deck_form.admin_post_id)
-    else for (var count = 1; count <= 39; count++) fabdojoDeckForm_addCardInfo()
-
+    var isEditMode = window.location.href.indexOf('edit') > -1
+    if (isEditMode) fabdojoDeckForm_adminRetrieve(fabdojo_deck_form.admin_post_id)
+    else fabdojoDeckForm_prepareEmptyCardList()
 })
+
+function fabdojoDeckForm_prepareEmptyCardList () {
+    for (var count = 1; count <= 39; count++) fabdojoDeckForm_addCardInfo()
+}
 
 function fabdojoDeckForm_initSelect2() {
     jQuery(`
@@ -31,15 +33,12 @@ function fabdojoDeckForm_initSelect2() {
 function fabdojoDeckForm_updateCardCount() {
     var cardCount = 0
     jQuery('table.fabdojo-card-list tbody tr').each(function () {
-        cardCount += parseInt(jQuery(this).find(`[name^="card-qty"]`).val())
+        var row = jQuery(this)
+        var cardId = row.find(`[name^="card-name"]`).val()
+        var count = parseInt(row.find(`[name^="card-qty"]`).val())
+        cardCount += null !== cardId ? count : 0
     })
     jQuery('.fabdojo-deck-form [id="get-card-count"]').html(cardCount)
-}
-
-function fabdojoDeckForm_cardQtyBindKeyup () {
-    jQuery(`[name^="card-qty"]`)
-        .unbind('keyup')
-        .bind('keyup', fabdojoDeckForm_updateCardCount)
 }
 
 function fabdojoDeckForm_addCardInfo(cardData) {
@@ -54,10 +53,10 @@ function fabdojoDeckForm_addCardInfo(cardData) {
     var cardRow = `
         <tr>
             <td width='50%'>
-                <select name='card-name[${cardData.rowId}]' data-source='${fabdojo_deck_form.card_dropdown_source}'>${option}</select>
+                <select onchange="fabdojoDeckForm_updateCardCount()" name='card-name[${cardData.rowId}]' data-source='${fabdojo_deck_form.card_dropdown_source}'>${option}</select>
             </td>
             <td>
-                <input type='text' name='card-qty[${cardData.rowId}]' value="${cardData.qty}">
+                <input onkeyup="fabdojoDeckForm_updateCardCount()" type='text' name='card-qty[${cardData.rowId}]' value="${cardData.qty}">
             </td>
             <td>
                 ${checkbox}
@@ -67,7 +66,6 @@ function fabdojoDeckForm_addCardInfo(cardData) {
     jQuery('table.fabdojo-card-list tbody').append(cardRow)
     fabdojoDeckForm_initSelect2()
     fabdojoDeckForm_updateCardCount()
-    fabdojoDeckForm_cardQtyBindKeyup()
 }
 
 function fabdojoDeckForm_delete() {
@@ -82,7 +80,10 @@ function fabdojoDeckForm_delete() {
 
 function fabdojoDeckForm_saveAdd() {
     var post = fabdojoDeckForm_collectFormData()
-    jQuery.post(fabdojo_deck_form.save_deck_url, post, fabdojoDeckForm_resetFormData)
+    jQuery.post(fabdojo_deck_form.save_deck_url, post, () => {
+        fabdojoDeckForm_resetFormData()
+        fabdojoDeckForm_prepareEmptyCardList()
+    })
 }
 
 function fabdojoDeckForm_saveEdit() {

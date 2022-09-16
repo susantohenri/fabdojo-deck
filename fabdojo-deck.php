@@ -199,7 +199,7 @@ add_action('save_post', function ($post_id) {
             foreach ($_POST['card-name'] as $rowId => $cardId) {
                 $cardCount = absint($_POST['card-qty'][$rowId]);
                 if (0 !== strpos($rowId, 'update-')) {
-                    if (!isset($_POST['card-delete'][$rowId])) $wpdb->insert($decklistInfoTable, [
+                    if (!isset($_POST['card-delete'][$rowId]) && '' !== $cardId) $wpdb->insert($decklistInfoTable, [
                         'post_id' => $post_id,
                         'decklist_card' => $cardId,
                         'decklist_quantity' => $cardCount
@@ -263,7 +263,7 @@ function fabdojoDeckSelect2Player()
         'post_type' => 'player',
         'order' => 'ASC',
         'orderby' => 'title',
-        'post_per_page' => -1
+        'posts_per_page' => -1
     ));
     while ($posts->have_posts()) {
         $posts->the_post();
@@ -277,7 +277,7 @@ function fabdojoDeckSelect2Player()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text,  stripslashes($term)) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -294,7 +294,7 @@ function fabdojoDeckSelect2Event()
         'post_type' => 'event',
         'order' => 'ASC',
         'orderby' => 'title',
-        'post_per_page' => -1
+        'posts_per_page' => -1
     ));
     while ($posts->have_posts()) {
         $posts->the_post();
@@ -308,7 +308,7 @@ function fabdojoDeckSelect2Event()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text,  stripslashes($term)) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -325,7 +325,7 @@ function fabdojoDeckSelect2Hero()
         'post_type' => 'hero',
         'order' => 'ASC',
         'orderby' => 'title',
-        'post_per_page' => -1
+        'posts_per_page' => -1
     ));
     while ($posts->have_posts()) {
         $posts->the_post();
@@ -339,7 +339,7 @@ function fabdojoDeckSelect2Hero()
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text,  stripslashes($term)) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -351,20 +351,26 @@ function fabdojoDeckSelect2Card()
 {
     global $wpdb;
     $tablename = $wpdb->prefix . 'fd_cardlist';
-    $query = $wpdb->prepare("SELECT card_id, name, pitch FROM $tablename");
+    $query = $wpdb->prepare("
+        SELECT
+            card_id id,
+            CASE pitch
+                WHEN 1 THEN CONCAT(`name`, ' - RED')
+                WHEN 2 THEN CONCAT(`name`, ' - YELLOW')
+                WHEN 3 THEN CONCAT(`name`, ' - BLUE')
+                WHEN 0 THEN CONCAT(`name`, '')
+                END
+            `text`
+        FROM $tablename
+    ");
     $result = new stdClass();
-    $result->results = array_map(function ($card) {
-        return (object) array(
-            'id' => $card->card_id,
-            'text' => "{$card->name} - {$card->pitch}",
-        );
-    }, $wpdb->get_results($query));
+    $result->results = $wpdb->get_results($query);
 
     if ($term = $_GET['term']) {
         if ('' !== $term) {
             $results = array();
             foreach ($result->results as $option) {
-                if (stripos($option->text, $term) !== false) $results[] = $option;
+                if (stripos($option->text, stripslashes($term)) !== false) $results[] = $option;
             }
             $result->results = $results;
         }
@@ -392,7 +398,7 @@ function fabdojoSaveDeck()
         foreach ($_POST['card-name'] as $rowId => $cardId) {
             $cardCount = absint($_POST['card-qty'][$rowId]);
             if (0 !== strpos($rowId, 'update-')) {
-                $wpdb->insert($decklistInfoTable, [
+                if ('' !== $cardId) $wpdb->insert($decklistInfoTable, [
                     'post_id' => $post_id,
                     'decklist_card' => $cardId,
                     'decklist_quantity' => $cardCount
@@ -458,7 +464,13 @@ function fabdojoRetrieveDeck()
         SELECT
             CONCAT('update-', {$wpdb->prefix}fd_decklist_info.id) rowId
             , {$wpdb->prefix}fd_decklist_info.decklist_card id
-            , CONCAT({$wpdb->prefix}fd_cardlist.name, ' - ', {$wpdb->prefix}fd_cardlist.pitch) text
+            , CASE pitch
+                WHEN 1 THEN CONCAT(`name`, ' - RED')
+                WHEN 2 THEN CONCAT(`name`, ' - YELLOW')
+                WHEN 3 THEN CONCAT(`name`, ' - BLUE')
+                WHEN 0 THEN CONCAT(`name`, '')
+                END
+                `text`
             , {$wpdb->prefix}fd_decklist_info.decklist_quantity qty
         FROM {$wpdb->prefix}fd_decklist_info
         LEFT JOIN {$wpdb->prefix}fd_cardlist ON {$wpdb->prefix}fd_decklist_info.decklist_card = {$wpdb->prefix}fd_cardlist.card_id
