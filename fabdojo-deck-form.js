@@ -46,7 +46,7 @@ function fabdojoDeckForm_addCardInfo(cardData) {
         rowId: '',
         id: '',
         text: '',
-        qty: 0
+        qty: 1
     }
     var option = '' === cardData.id ? '' : `<option value="${cardData.id}">${cardData.text}</option>`
     var checkbox = '' === cardData.id ? '' : `<input type='checkbox' name='card-delete[${cardData.rowId}]'>`

@@ -458,8 +458,8 @@ function fabdojoDeckSelect2Card()
     global $wpdb;
     $tablename = $wpdb->prefix . 'fd_cardlist';
     $query = $wpdb->prepare("
-        SELECT
-            card_id id,
+        SELECT DISTINCT
+            identifier id,
             CASE pitch
                 WHEN 1 THEN CONCAT(`name`, ' - RED')
                 WHEN 2 THEN CONCAT(`name`, ' - YELLOW')
@@ -579,7 +579,7 @@ function fabdojoRetrieveDeck()
                 `text`
             , {$wpdb->prefix}fd_decklist_info.decklist_quantity qty
         FROM {$wpdb->prefix}fd_decklist_info
-        LEFT JOIN {$wpdb->prefix}fd_cardlist ON {$wpdb->prefix}fd_decklist_info.decklist_card = {$wpdb->prefix}fd_cardlist.card_id
+        LEFT JOIN {$wpdb->prefix}fd_cardlist ON {$wpdb->prefix}fd_decklist_info.decklist_card = {$wpdb->prefix}fd_cardlist.identifier
         WHERE {$wpdb->prefix}fd_decklist_info.post_id = %d
         ORDER BY {$wpdb->prefix}fd_decklist_info.id ASC
     ", $post_id));
