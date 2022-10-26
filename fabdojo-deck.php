@@ -169,6 +169,9 @@ add_action('add_meta_boxes', function () {
             $event_dropdown_source = site_url('wp-json/fabdojo-deck/v1/events');
             $hero_dropdown_source = site_url('wp-json/fabdojo-deck/v1/heroes');
 
+            global $post;
+            $delete_button = '0000-00-00 00:00:00' === $post->post_date_gmt ? '' : "<a class='button button-primary button-large' href='javascript:document.querySelector(`.submitdelete.deletion`).click()'>Delete</a>";
+
             echo "
                 <table>
                     <tr>
@@ -227,6 +230,15 @@ add_action('add_meta_boxes', function () {
                         <tr>
                             <th colspan='3'>
                                 <a class='add_card_info'> + add another card info</a>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th colspan='3' align='right'>
+                                <input type='hidden' name='selected_decklist_action_button' id='selected_decklist_action_button'>
+                                {$delete_button}
+                                <a class='button button-primary button-large' href='javascript:document.querySelector(`#selected_decklist_action_button`).value=`Save and add another`;document.querySelector(`#publish`).click()'>Save and add another</a>
+                                <a class='button button-primary button-large' href='javascript:document.querySelector(`#selected_decklist_action_button`).value=`Save and continue editing`;document.querySelector(`#publish`).click()'>Save and continue editing</a>
+                                <a class='button button-primary button-large' href='javascript:document.querySelector(`#selected_decklist_action_button`).value=`Save`;document.querySelector(`#publish`).click()'>Save</a>
                             </th>
                         </tr>
                     </tfoot>
@@ -288,6 +300,34 @@ function fabdojoDeckHookSavePost($post_id)
         }
     }
 }
+
+add_filter('redirect_post_location', 'fabdojoDeckHookAdminRedirectAfterSave');
+function fabdojoDeckHookAdminRedirectAfterSave($location)
+{
+    global $post;
+    if (
+        (isset($_POST['publish']) || isset($_POST['save']))
+        && preg_match("/post=([0-9]*)/", $location, $match)
+        && $post
+        && $post->ID == $match[1]
+        && (isset($_POST['publish']) || $post->post_status == 'publish')
+        && 'decklist' === $post->post_type
+        && isset($_POST['selected_decklist_action_button'])
+    ) {
+        switch ($_POST['selected_decklist_action_button']) {
+            case 'Save and add another':
+                $location = site_url() . '/wp-admin/post-new.php?post_type=decklist';
+                break;
+            case 'Save and continue editing':
+                break;
+            case 'Save':
+                $location = site_url() . '/wp-admin/edit.php?post_type=' . $post->post_type;
+                break;
+        }
+    }
+    return $location;
+}
+
 
 add_action('rest_api_init', function () {
     register_rest_route('fabdojo-deck/v1', '/players', array(
